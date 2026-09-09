@@ -63,10 +63,45 @@ git --no-pager log --oneline -1 && git --no-pager status --short
 If the PR unexpectedly has more than one commit, stop and ask which commit to
 amend into rather than guessing.
 
-### 5. Hide the old review as resolved
+### 5. Reply to and resolve every review thread
 
-Do **not** resolve individual review threads — leave them as they are.
-Instead, once every selected item is fixed, minimize the triaged review itself
+Unresolved threads keep showing up in the Files-changed view even after the
+review is hidden, so close out **every** inline comment from the triaged
+review — fixed or not:
+
+- **Fixed items:** reply with one line, e.g. `Fixed in <short-sha>.`
+- **Unfixed items** (INVALID / STYLE / user declined): reply with the one-line
+  reason from the gh-review verdict, e.g. `Not changing — data_file is
+  informational only; psd_spectrum.py never reads it.`
+
+Then resolve the thread. Reply via REST, resolve via GraphQL (the only API
+that exposes thread resolution):
+
+```sh
+# Reply (COMMENT_ID = inline comment id from gh-review step 2)
+gh api -X POST repos/OWNER/REPO/pulls/PR/comments/COMMENT_ID/replies -f body='Fixed in abc1234.'
+
+# Map comment ids -> thread ids
+gh api graphql -f query='
+  query($owner:String!,$repo:String!,$pr:Int!){
+    repository(owner:$owner,name:$repo){ pullRequest(number:$pr){
+      reviewThreads(last:50){ nodes{ id isResolved
+        comments(first:1){ nodes{ databaseId } } } } } } }' \
+  -f owner=OWNER -f repo=REPO -F pr=PR \
+  --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved==false) | {thread:.id, comment:.comments.nodes[0].databaseId}'
+
+# Resolve each thread
+gh api graphql -f query='
+  mutation($id:ID!){ resolveReviewThread(input:{threadId:$id}){
+    thread{ isResolved } } }' -f id=THREAD_NODE_ID
+```
+
+Only touch threads whose first comment belongs to the triaged review; leave
+threads from other reviewers or earlier reviews alone.
+
+### 6. Hide the old review as resolved
+
+Once every thread from step 5 is resolved, minimize the triaged review itself
 so its summary disappears from the PR timeline (the "Hide → Resolved" action
 in the UI). Skip this if any VALID item from the review was deliberately left
 unfixed.
@@ -84,7 +119,7 @@ gh api graphql -f query='
     minimizedComment{ isMinimized minimizedReason } } }' -f id=REVIEW_NODE_ID
 ```
 
-### 6. Request a fresh Copilot review
+### 7. Request a fresh Copilot review
 
 The repository's default Copilot review effort is **Balanced**, so re-request
 via API without asking:
@@ -106,17 +141,20 @@ gh api repos/OWNER/REPO/issues/PR/events \
 Do not use `gh pr edit --add-reviewer` (GraphQL; fails on Projects-classic
 deprecation).
 
-### 7. Report
+### 8. Report
 
 One short block: items fixed (numbers), tests run and result, new commit
-hash, review hidden (or why not), and that a new Copilot review was
-requested. Then stop — the next `gh-review` run picks up the new review.
+hash, threads replied/resolved, review hidden (or why not), and that a new
+Copilot review was requested. Then stop — the next `gh-review` run picks up
+the new review.
 
 ## Hard rules
 
 - Never fix items the user did not select.
 - Never create a new commit; always amend.
 - Never `git add -A`, `git add .`, or push without `--force-with-lease`.
-- Never resolve individual review threads; only hide the review as a whole.
+- Resolve every thread from the triaged review, each with a one-line reply
+  (fixed / why not). Never resolve a thread silently.
 - Never hide a review while a VALID item from it is still open.
-- Never post comments or replies on the PR.
+- Replies are limited to the one-liners in step 5; never post anything else on
+  the PR.
