@@ -41,14 +41,37 @@ gh pr view --json number,url,headRefName,reviews --jq '{number,url,headRefName,r
 If the current branch has no PR and none was given, ask the user for the
 number.
 
-When the PR's `headRefName` differs from the checked-out branch:
+When the PR's `headRefName` differs from the checked-out branch, **checking out
+the PR branch is the default**. Decide purely on tree state, never on which
+branch happens to be active:
 
-- If the working tree is clean (`git status --porcelain` is empty), switch to
-  it so step 3 reads the right code: `gh pr checkout PR`. Say so in the
-  report.
-- If the tree is dirty, do **not** switch. Read the referenced code via
-  `gh api repos/{owner}/{repo}/contents/{path}?ref={headRefName}` instead of the
-  working tree, and note in the report that the local checkout was left alone.
+```sh
+git status --porcelain          # empty => clean
+```
+
+- **Clean tree → `gh pr checkout PR`.** Do this before step 3. It is the only
+  way to get language-server lookups, `grep` across the whole tree, and the
+  ability to build/run tests when a verdict depends on runtime behaviour
+  (e.g. signal connection types, ordering). Say in the report that you
+  switched branches.
+- **Dirty tree → do not switch.** Read the referenced code via the API using
+  the PR **head SHA**, not the branch name (fork branches 404 on the upstream
+  repo):
+
+  ```sh
+  SHA=$(gh api repos/{owner}/{repo}/pulls/PR --jq .head.sha)
+  gh api "repos/{owner}/{repo}/contents/{path}?ref=$SHA" --jq .content | base64 -d
+  ```
+
+  Any cross-file reasoning (callers, signal connections, other tests) must
+  also be checked against `$SHA`, never against the local checkout — the
+  local branch may differ from the PR. Fetch every file the reasoning touches,
+  not just the files the reviewer commented on. Note in the report that the
+  local checkout was left alone and which assumptions could not be verified
+  by build/test.
+
+Being on a different branch is **not** by itself a reason to stay put; that
+mistake was made on PR #15088 and degraded the analysis.
 
 Pick the review with the newest `submittedAt` authored by
 `copilot-pull-request-reviewer` (fall back to the newest review overall if the
