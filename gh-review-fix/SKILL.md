@@ -49,6 +49,22 @@ Run what the change touches, from the repo root:
 If a fix changes behaviour a test asserts, update the test in the same edit.
 Do not proceed with failing tests; fix or report back.
 
+### 3b. Self-review the fixes before amending
+
+Run the `local-review` pass over everything pending (`git status --short` +
+`git --no-pager diff`) and look at the fixes cold, as a reviewer would:
+
+- Does each hunk do exactly what the gh-review verdict said, and nothing else?
+- Any scope creep, unrelated formatting, stale comments, or debug leftovers?
+- Did the fix introduce a new problem (e.g. per-message `qCWarning` spam,
+  a fallback that hides invalid input, a test that can no longer fail)?
+- Do naming, comment density, and logging level match the surrounding code?
+
+If **anything** is questionable — even a judgement call you think is probably
+fine — **stop and ask** with the specific concern before going any further.
+Do not amend or push until the user has answered. Only proceed to step 4 when
+the review is clean or the user has cleared every open question.
+
 ### 4. Amend into the PR commit
 
 The PR is always **one commit**. Never create a second one.
@@ -151,6 +167,8 @@ the new review.
 ## Hard rules
 
 - Never fix items the user did not select.
+- Never amend or push before the step 3b self-review; if it raises anything
+  questionable, ask first.
 - Never create a new commit; always amend.
 - Never `git add -A`, `git add .`, or push without `--force-with-lease`.
 - Resolve every thread from the triaged review, each with a one-line reply
