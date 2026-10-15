@@ -28,6 +28,17 @@ option. Do not start editing until the selection is unambiguous. "All" means
 every VALID and PARTIALLY VALID item; INVALID items are never fixed unless
 named explicitly.
 
+**Pre-select gh-review's recommendation.** Set the question's default
+selection to exactly the items the gh-review report's **Summary** line
+recommended fixing (not simply every VALID item: a VALID item the report said
+to skip stays unselected, and a PARTIALLY VALID item it recommended is
+selected). Mark those options "(recommended)" in their description and say
+in the question text which items are pre-selected and why, e.g. "Pre-selected:
+1–4, as recommended by the review (3 first)". If the report recommended
+nothing, leave the selection empty. The default is a suggestion only: the user
+still has to submit the form, and an accepted default counts as a validated
+selection.
+
 **Validate the answer before acting.** It counts only if `selected` is
 non-empty and every entry exactly matches an option label you offered. Treat
 anything else as **no answer**: an empty `selected`, any `freeText`, or text
