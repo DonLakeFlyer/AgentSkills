@@ -52,9 +52,14 @@ by them.
 
 - **Number each finding** (1, 2, 3, …) so it can be referenced in follow-up
   discussion.
-- **Every finding links to the exact source line(s)** as a markdown file link,
-  e.g. `[file.cc](src/path/file.cc#L42)`. Look up real line numbers first —
-  never quote code blocks instead of linking.
+- **Every finding that references code gets a clickable code pointer** to the
+  exact source line, as a markdown link with the **absolute file path and a
+  1-based line number**, e.g. `[resolveResult](/abs/path/to/file.cc:42)` or
+  `[file.cc](/abs/path/to/file.cc:42)`. Do not use relative paths or `#L42`
+  anchors; those are not clickable in the editor. Use `/` path separators,
+  link text that is the file name or symbol, and no line ranges. Look up real
+  line numbers first, and use a link every time you mention a file or symbol,
+  not just the first. Never quote code blocks instead of linking.
 - **Order by severity**: bugs first, then robustness, then style/consistency.
 - If a finding is speculative or low-risk, say so explicitly.
 - Do not pad with praise or restate what the diff does.
