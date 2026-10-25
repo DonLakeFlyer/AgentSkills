@@ -43,7 +43,18 @@ Work through the diff category by category — do not just scan for typos:
 5. **API misuse and project-convention violations** — check repo
    instructions (AGENTS.md, CODING_STYLE.md, copilot-instructions) and apply
    their rules
-6. **Tests** — missing coverage for new behavior, fragile assertions
+6. **Duplication within the diff** — repeated blocks, near-identical
+   functions/branches, or copy-pasted QML/C++ that could collapse into one
+   helper, loop, or shared control. Name the concrete collapse (which
+   occurrences, into what).
+7. **Duplication against the existing codebase** — search the repo
+   (`grep_search`/`semantic_search`) for existing helpers, controls, or
+   utilities that already do what new code reimplements, and for existing
+   code elsewhere that does what a new piece of code does. Report both
+   directions: new code that should reuse something existing, and new code
+   that is general enough to become a reusable component other parts of the
+   code should adopt (name those call sites).
+8. **Tests** — missing coverage for new behavior, fragile assertions
 
 Flag issues even if they are outside the lines directly changed but affected
 by them.
