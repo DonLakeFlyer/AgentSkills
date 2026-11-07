@@ -62,7 +62,8 @@ by them.
 ### 3. Report
 
 - **Number each finding** (1, 2, 3, …) so it can be referenced in follow-up
-  discussion.
+  discussion. Numbering is fixed for the rest of the conversation; never
+  renumber when discussing or fixing.
 - **Every finding that references code gets a clickable code pointer** to the
   exact source line, as a markdown link with the **absolute file path and a
   1-based line number**, e.g. `[resolveResult](/abs/path/to/file.cc:42)` or
@@ -72,8 +73,35 @@ by them.
   line numbers first, and use a link every time you mention a file or symbol,
   not just the first. Never quote code blocks instead of linking.
 - **Order by severity**: bugs first, then robustness, then style/consistency.
-- If a finding is speculative or low-risk, say so explicitly.
 - Do not pad with praise or restate what the diff does.
+
+One entry per finding:
+
+```
+### N. [file.ext:LINE](/abs/path/to/file.ext:LINE) — <short title>
+Severity: BUG  ("fix 2 and 4", or "do it" meaning every item marked FIX):
+make the code change only, run the relevant tests — do not commit or push
+
+Why: <1–3 sentences grounded in the code you read; say so if speculative>
+Fix: <what the change would be, concretely>
+Risk: <what the fix could break / tests that would need updating; or "low">
+Recommendation: FIX | OPTIONAL | SKIP — <one-line reason>
+```
+
+Recommendation guidance:
+
+- **FIX** — a real defect, a likely false positive/negative in behaviour the
+  user relies on, or a cheap change that removes clear confusion.
+- **OPTIONAL** — harmless either way; worth doing only if already touching
+  the code.
+- **SKIP** — the cost (refactor, new test harness, churn) outweighs the
+  benefit, or the concern is speculative. Say what would change the call.
+
+Then a short **Summary**: counts by severity and the list of items you
+recommend fixing (e.g. "Recommend fixing 1, 2, 4; skip 3"). If two findings
+would be fixed by the same change, say so.
+
+End with: *"No files changed. Tell me which items to fix or discuss."*
 
 ## After the report
 
